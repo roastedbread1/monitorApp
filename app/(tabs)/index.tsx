@@ -28,12 +28,11 @@ const CLIENT_ID = `react-native-monitor-${Math.random().toString(16).substr(2, 8
 
 /**
  * A custom, true semi-circle progress bar component built with react-native-svg.
- * This fixes the layout and visual issues from previous versions.
+ * This version applies the gradient to the background track.
  */
 const SemiCircleProgress = ({ progress, size = 120, strokeWidth = 12, colors, children }) => {
     const radius = (size - strokeWidth) / 2;
     const center = size / 2;
-    const circumference = Math.PI * radius; // Circumference of a semi-circle
 
     // Function to describe the arc path
     const describeArc = (x, y, radius, startAngle, endAngle) => {
@@ -53,16 +52,17 @@ const SemiCircleProgress = ({ progress, size = 120, strokeWidth = 12, colors, ch
         return d;
     }
 
-    // Angles for a top semi-circle (from -180 to 0 degrees in radians)
-    const startAngleRad = Math.PI; // 180 degrees
-    const endAngleRad = 2 * Math.PI; // 360 or 0 degrees
+    // Angles for a top semi-circle (from 180 to 360 degrees)
+    const startAngleRad = Math.PI;
+    const endAngleRad = 2 * Math.PI;
 
+    // Calculate the angle for the thumb based on progress
     const progressAngleRad = startAngleRad + (progress / 100) * (endAngleRad - startAngleRad);
 
+    // The background path is the full semi-circle
     const backgroundPath = describeArc(center, center, radius, startAngleRad, endAngleRad);
-    const progressPath = describeArc(center, center, radius, startAngleRad, progressAngleRad);
 
-    // Calculate thumb position within the SVG
+    // Calculate thumb position along the arc
     const thumbX = center + radius * Math.cos(progressAngleRad);
     const thumbY = center + radius * Math.sin(progressAngleRad);
 
@@ -77,33 +77,24 @@ const SemiCircleProgress = ({ progress, size = 120, strokeWidth = 12, colors, ch
                     </SvgLinearGradient>
                 </Defs>
 
-                {/* Background Track */}
+                {/* Background Track with Gradient */}
                 <Path
                     d={backgroundPath}
                     fill="none"
-                    stroke="rgba(255, 255, 255, 0.2)"
+                    stroke="url(#grad)" // Apply gradient to the background track
                     strokeWidth={strokeWidth}
                     strokeLinecap="round"
                 />
 
-                {/* Progress Path */}
-                {progress > 0 && (
-                    <Path
-                        d={progressPath}
-                        fill="none"
-                        stroke="url(#grad)"
-                        strokeWidth={strokeWidth}
-                        strokeLinecap="round"
-                    />
-                )}
-
-                {/* Thumb Indicator */}
+                {/* Thumb Indicator is the only advancing element */}
                 {progress > 0 && (
                     <Circle
                         cx={thumbX}
                         cy={thumbY}
-                        r={strokeWidth / 2}
+                        r={strokeWidth / 1.5} // Make thumb slightly larger than the track
                         fill="#FFFFFF"
+                        stroke="rgba(0,0,0,0.2)"
+                        strokeWidth={1}
                     />
                 )}
             </Svg>
@@ -116,7 +107,6 @@ const SemiCircleProgress = ({ progress, size = 120, strokeWidth = 12, colors, ch
 
 export default function PlantMonitorScreen() {
     // --- Component State ---
-    // FIX: Provided correct variable names for each useState hook.
     const [connectionStatus, setConnectionStatus] = useState('Disconnected');
     const [airTemp, setAirTemp] = useState(0);
     const [airHumidity, setAirHumidity] = useState(0);
@@ -245,7 +235,8 @@ const TemperatureCard = ({ title, temperature }: TemperatureCardProps) => {
             <Text style={styles.cardTitle}>{title}</Text>
             <SemiCircleProgress
                 progress={progress}
-                colors={['#4CAF50', '#9C27B0']} // Green to Purple gradient
+                // FIX: Updated temperature gradient colors
+                colors={['#4CAF50', '#FFC107', '#F44336', '#9C27B0']}
             >
                 <Text style={styles.progressValue}>{temperature.toFixed(1)}°C</Text>
             </SemiCircleProgress>
